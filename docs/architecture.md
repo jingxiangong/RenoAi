@@ -23,6 +23,10 @@
 | `src/server/pricing` | Catalog lookup, phrase scoring, and abstention |
 | `supabase/migrations` | Record tables, access policies, storage bucket, pricing seed, and AI call reservations |
 
+## Styles
+
+`src/app/globals.css` imports styles in cascade order. Shared themes and layout styles live in `src/styles`. Route, feature, and shell styles live beside the components they serve.
+
 ## Persistence and security limitations
 
 The browser cache is namespaced to the signed-in account. Legacy unscoped records are left in the browser and are excluded from automatic imports. The data API compares the request's cache scope with the current session to reject stale-tab sync after an account switch. Browser cache entries remain on the device after logout. The cache scope provides application-level separation within the browser.

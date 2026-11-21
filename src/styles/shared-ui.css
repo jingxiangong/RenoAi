@@ -1,0 +1,4 @@
+.requests-empty { padding: 42px 18px; border: 1px dashed #d2d2d2; border-radius: 14px; color: #777; font-size: 14px; font-weight: 300; text-align: center; }
+
+.secondary-btn { display: inline-flex; min-height: 46px; align-items: center; justify-content: center; gap: 8px; padding: 11px 16px; border-radius: 14px; font-weight: 700; text-align: center; cursor: pointer; }
+.secondary-btn { border: 1px solid var(--line); color: var(--ink); background: white; }

@@ -1,0 +1,21 @@
+.settings-page { display: flex; width: min(100%, 402px); min-height: 100svh; margin: 0 auto; padding: max(22px, env(safe-area-inset-top)) 22px calc(34px + env(safe-area-inset-bottom)); flex-direction: column; color: #111; background: #fff; font-family: var(--font-sf-text); }
+.settings-header { display: grid; min-height: 44px; grid-template-columns: 44px 1fr 44px; align-items: center; }
+.settings-header > a { display: grid; width: 40px; height: 40px; place-items: center; border-radius: 50%; color: #111; }
+.settings-header > a:active { background: #f3f4f6; }
+.settings-header h1 { margin: 0; font-family: var(--font-sf-display); font-size: 18px; font-weight: 400; line-height: 24px; letter-spacing: -.18px; text-align: center; }
+.settings-profile { display: flex; flex-direction: column; align-items: center; padding: 42px 0 38px; text-align: center; }
+.settings-avatar { display: grid; width: 78px; height: 78px; overflow: hidden; place-items: center; border-radius: 50%; color: #203a5f; background: #d3dbe7; font-size: 28px; font-weight: 400; }
+.settings-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.settings-profile h2 { margin: 16px 0 0; color: #111; font-family: var(--font-sf-display); font-size: 22px; font-weight: 400; line-height: 28px; letter-spacing: -.22px; }
+.settings-profile p { margin: 5px 0 0; color: #7b818a; font-size: 14px; font-weight: 300; line-height: 19px; overflow-wrap: anywhere; }
+.settings-section h3 { margin: 0 0 10px 4px; color: #8a8f96; font-size: 12px; font-weight: 400; line-height: 16px; letter-spacing: .04em; text-transform: uppercase; }
+.settings-account-card { display: flex; min-height: 72px; align-items: center; gap: 12px; padding: 13px 15px; border: 1px solid #e7e8ea; border-radius: 18px; background: #fff; }
+.settings-account-icon { display: grid; width: 40px; height: 40px; flex: 0 0 40px; place-items: center; border-radius: 12px; color: #203a5f; background: #edf1f6; }
+.settings-account-card > div:nth-child(2) { min-width: 0; flex: 1; }
+.settings-account-card strong, .settings-account-card span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.settings-account-card strong { color: #111; font-size: 14px; font-weight: 400; line-height: 18px; }
+.settings-account-card span { margin-top: 3px; color: #8a8f96; font-size: 12px; font-weight: 300; line-height: 16px; }
+.settings-account-check { flex: 0 0 auto; color: #4f9c72; }
+.settings-logout-form { margin-top: auto; padding-top: 48px; }
+.settings-logout { display: inline-flex; width: 100%; min-height: 52px; align-items: center; justify-content: center; gap: 8px; border: 1px solid #efd8d5; border-radius: 16px; color: #b0443d; background: #fff8f7; font-size: 15px; font-weight: 400; cursor: pointer; }
+.settings-logout-form p { max-width: 290px; margin: 11px auto 0; color: #9a9da2; font-size: 11px; font-weight: 300; line-height: 16px; text-align: center; }

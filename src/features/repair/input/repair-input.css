@@ -1,0 +1,54 @@
+.composer-card { display: flex; flex-direction: column; gap: 16px; padding: 10px 12px 26px; border: 1px solid #e0e0e0; border-radius: 20px; background: #fff; }
+.composer-photos { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.composer-photos::-webkit-scrollbar { display: none; }
+.composer-add, .composer-video {
+  display: flex;
+  width: 69px;
+  height: 69px;
+  flex: 0 0 69px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: 0;
+  border-radius: 12px;
+  color: #8e8787;
+  background: #f4f2f2;
+}
+.composer-add { cursor: pointer; }
+.composer-add span, .composer-video span { font-size: 13px; font-weight: 400; letter-spacing: -.2px; }
+.composer-thumb { width: 69px; height: 69px; flex: 0 0 69px; border-radius: 12px; object-fit: cover; }
+.composer-attachment { position: relative; flex: 0 0 69px; width: 69px; height: 69px; }
+.composer-remove-attachment { position: absolute; top: 3px; right: 3px; display: grid; width: 24px; height: 24px; padding: 0; place-items: center; border: 0; border-radius: 50%; background: rgba(21, 34, 29, .85); color: white; cursor: pointer; }
+.composer-remove-attachment:focus-visible { outline: 2px solid white; outline-offset: 1px; }
+.composer-error { margin: 0 4px; color: #a53318; font-size: 13px; line-height: 1.4; }
+.composer-selected-issue { display: flex; min-height: 40px; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 11px 9px 13px; border: 1px solid #e5e7eb; border-radius: 13px; color: #111; background: #fff; font-size: 13px; font-weight: 400; line-height: 18px; animation: selected-issue-in .18s ease-out; }
+.composer-selected-issue span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.composer-selected-issue button { display: grid; width: 26px; height: 26px; flex: 0 0 26px; padding: 0; place-items: center; border: 0; border-radius: 50%; color: #94989e; background: transparent; cursor: pointer; }
+.composer-selected-issue button:active { color: #111; background: #f1f2f4; }
+@keyframes selected-issue-in { from { opacity: 0; transform: translateY(-3px); } }
+.composer-textarea { display: block; width: 100%; min-height: 44px; padding: 0 4px; border: 0; outline: 0; resize: none; color: #15221d; background: transparent; font-size: 15px; font-weight: 300; line-height: 21px; }
+.composer-textarea::placeholder { color: #a8a4a4; opacity: 1; }
+.composer-toolbar { display: flex; align-items: center; justify-content: space-between; }
+.composer-icon-btn, .composer-mic-btn { display: grid; width: 34px; height: 34px; padding: 0; place-items: center; border-radius: 50%; cursor: pointer; }
+.composer-icon-btn { border: 1px solid #e0e0e0; color: #15221d; background: #fff; }
+.composer-voice-action { display: flex; align-items: center; gap: 9px; margin-left: auto; }
+.composer-listening-copy { color: #6d7370; font-size: 12px; font-weight: 300; line-height: 16px; }
+.composer-mic-btn { position: relative; border: 0; color: #fff; background: #111; }
+.composer-mic-btn.listening { background: #111; }
+.composer-mic-btn.listening::after { position: absolute; inset: -4px; border: 1px solid rgba(17, 17, 17, .34); border-radius: 50%; content: ""; animation: voice-pulse 1.35s ease-out infinite; }
+.composer-mic-btn:disabled { cursor: not-allowed; opacity: .5; }
+@keyframes voice-pulse { 0% { opacity: .8; transform: scale(.88); } 75%, 100% { opacity: 0; transform: scale(1.18); } }
+.issue-section { margin-top: 32px; padding: 0 14px; }
+.issue-label { margin-bottom: 8px; color: #101828; font-size: 14px; font-weight: 400; letter-spacing: -.31px; }
+.issue-row { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 3px; scrollbar-width: none; }
+.issue-row::-webkit-scrollbar { display: none; }
+.issue-chip { display: flex; min-width: 58px; height: 80px; flex: 1 0 58px; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 10px 3px; border: .667px solid #e5e7eb; border-radius: 12px; background: #fff; cursor: pointer; }
+.issue-chip.active { border-color: #15221d; background: #eef3f0; }
+.issue-chip > span { display: block; min-width: 0; text-align: center; }
+.issue-chip strong, .issue-chip small { display: block; font-family: var(--font-sf-text); letter-spacing: 0; text-align: center; }
+.issue-chip strong { color: #1e2939; font-size: 8.5px; font-weight: 500; line-height: 11px; }
+.issue-chip small { margin-top: 2px; color: #99a1af; font-size: 8px; font-weight: 300; line-height: 10px; white-space: nowrap; }
+
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }

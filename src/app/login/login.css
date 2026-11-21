@@ -1,0 +1,72 @@
+.login-page {
+  width: 100%;
+  max-width: 430px;
+  min-height: 100svh;
+  margin: 0 auto;
+  background: #fff;
+}
+.login-content {
+  display: flex;
+  min-height: 100svh;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(72px, 27.9svh, 244px) 19px max(40px, calc(6.3svh + env(safe-area-inset-bottom)));
+}
+.login-brand {
+  display: flex;
+  width: 144px;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 15px 0;
+}
+.login-brand-mark {
+  display: block;
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+}
+.login-brand h1 {
+  margin: 0;
+  color: #000;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, sans-serif;
+  font-size: 40px;
+  font-weight: 510;
+  line-height: 48px;
+  letter-spacing: -.4px;
+  white-space: nowrap;
+}
+.social-login-list {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 12px;
+}
+.social-login-list form { width: 100%; }
+.login-error { margin: 0; color: #a53318; font-size: 13px; line-height: 18px; text-align: center; }
+.social-login-button {
+  display: flex;
+  width: 100%;
+  min-height: 56px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  overflow: hidden;
+  border-radius: 19px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  transition: transform .16s ease, filter .16s ease;
+}
+.social-login-button:active { transform: scale(.985); }
+.social-login-button:disabled { cursor: not-allowed; opacity: .55; transform: none; }
+.social-login-button:focus-visible { outline: 3px solid rgba(24, 119, 242, .28); outline-offset: 2px; }
+.social-login-button.google { padding: 15px; border: 1px solid #d4d4d4; color: #404040; background: #fff; }
+.social-login-icon { display: grid; width: 20px; height: 20px; flex: 0 0 20px; place-items: center; overflow: hidden; }
+.social-login-icon img { display: block; width: 20px; height: 20px; }
+
+@media (max-height: 650px) {
+  .login-content { min-height: auto; gap: 48px; padding-top: 56px; padding-bottom: max(32px, env(safe-area-inset-bottom)); }
+}

@@ -1,0 +1,22 @@
+.home-logo {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 25px;
+  color: #000;
+  font-family: var(--font-sf-display);
+  font-size: 24px;
+  font-weight: 510;
+  letter-spacing: -.24px;
+}
+.home-logo img { width: 32px; height: 32px; flex: 0 0 32px; border-radius: 8px; object-fit: cover; }
+.home-hero { margin: 58px 0 29px; text-align: center; }
+.home-hero h1 {
+  color: #000;
+  font-family: var(--font-sf-display);
+  font-size: 32px;
+  font-weight: 510;
+  line-height: 38px;
+  letter-spacing: -.32px;
+}
+.home-hero p { margin: 1px 0 0; color: #939090; font-size: 16px; font-weight: 300; line-height: 21px; letter-spacing: -.16px; }
