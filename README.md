@@ -48,8 +48,14 @@ To start the app, copy [.env.example](.env.example) to `.env.local`, set the app
 | --- | --- |
 | Review the product without an account | Use the [sample walkthrough](docs/walkthrough.md). |
 | Run the signed-in text workflow | Configure Auth.js and a Google OAuth client, including the callback for the local origin. Set `AI_DEMO_MODE=true` for deterministic text-based analysis. |
-| Run live photo-assisted analysis | Configure Qwen and set `AI_DEMO_MODE=false`. Live extraction sends photos and request context to the configured provider. |
+| Run live analysis | Set `AI_DEMO_MODE=false` and `QWEN_API_KEY`. Apply the Supabase migrations and set `NEXT_PUBLIC_SUPABASE_URL` and the server-only `SUPABASE_SERVICE_ROLE_KEY` for usage limits. |
 | Persist records and attach media | Configure Supabase and apply the [migrations](supabase/migrations). Without Supabase, use text-only input and browser-local records. |
+
+## Photos and AI usage
+
+Paste a screenshot into the repair description or use the attachment picker. Up to two photos can be attached per repair and removed before sending. Photo upload uses Supabase. Live extraction sends compressed photos, the repair description, and the property type and ID to Qwen.
+
+Live AI reserves each provider call in Supabase before sending it. Each repair allows at most three calls, including at most one clarification round. Up to two calls can be used before final repair analysis. Failed calls and retries count when reserved. The default daily limits are 12 calls per account and 120 for the site, resetting at midnight UTC. Override them with `QWEN_ACCOUNT_DAILY_LIMIT` and `QWEN_SITE_DAILY_LIMIT`. Each request caps model output at 1,200 tokens. These controls bound usage in this app. Actual charges depend on the model and provider pricing. Demo mode doesn't call Qwen or require a database to run the text workflow.
 
 ## Implementation status
 

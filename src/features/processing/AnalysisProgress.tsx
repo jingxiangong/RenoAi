@@ -6,6 +6,8 @@ import { useParams, useRouter } from "next/navigation";
 import { SquarePen } from "lucide-react";
 import type { RepairRequest } from "@/lib/local-store";
 import { useLocalStore } from "@/lib/local-store-context";
+import { MAX_REPAIR_PHOTOS } from "@/lib/repair-limits";
+import { readRepairResponse } from "@/lib/repair-response";
 
 const problemPhases = [
   "Reading your photos and description",
@@ -33,9 +35,10 @@ export function AnalysisProgress({ stage }: { stage: "problem" | "project" }) {
     : ["Starting the repair analysis", "Checking repair and pricing", "Finishing your repair plan"];
 
   useEffect(() => {
+    if (error) return;
     const timer = window.setInterval(() => setPhase((value) => (value + 1) % phases.length), 900);
     return () => window.clearInterval(timer);
-  }, [phases.length]);
+  }, [error, phases.length]);
 
   useEffect(() => {
     if (started.current) return;
@@ -59,13 +62,12 @@ export function AnalysisProgress({ stage }: { stage: "problem" | "project" }) {
         body: JSON.stringify({ problem: request.analysis.problem_brief, evidence: request.evidence }),
       })
         .then(async (response) => {
-          if (!response.ok) throw new Error();
-          const project = await response.json();
+          const project = await readRepairResponse(response, "Analysis could not be completed.");
           await waitForAnimation();
           localStore.saveRequest({ ...request, status: "ready", project });
           router.replace(`/repair/${requestId}/result`);
         })
-        .catch(() => setError("Analysis could not be completed. Please return to the review and try again."));
+        .catch((error: Error) => setError(error.message));
       return;
     }
 
@@ -81,12 +83,11 @@ export function AnalysisProgress({ stage }: { stage: "problem" | "project" }) {
         property: localStore.selectedProperty(),
         description: request.description,
         category_hint: request.category_hint,
-        image_data_urls: imageDataUrls,
+        image_data_urls: imageDataUrls.slice(0, MAX_REPAIR_PHOTOS),
       }),
     })
       .then(async (response) => {
-        if (!response.ok) throw new Error();
-        const analysis = await response.json();
+        const analysis = await readRepairResponse(response, "Unable to prepare your brief.");
         await waitForAnimation();
         sessionStorage.removeItem(`renoai.analysis-images.${requestId}`);
         localStore.saveRequest({
@@ -96,7 +97,7 @@ export function AnalysisProgress({ stage }: { stage: "problem" | "project" }) {
         });
         router.replace(analysis.is_complete ? `/repair/${requestId}/review` : `/repair/${requestId}/clarify`);
       })
-      .catch(() => setError("Qwen AI couldn't analyse this request. Please return home and try again."));
+      .catch((error: Error) => setError(error.message));
   }, [localStore, requestId, router, stage]);
 
   const firstPhoto = item?.evidence.photos[0];
@@ -117,10 +118,11 @@ export function AnalysisProgress({ stage }: { stage: "problem" | "project" }) {
             {firstPhoto ? <img src={firstPhoto.thumbnail_url || firstPhoto.storage_url} alt="Repair being analysed" /> : <span aria-hidden />}
             <i className="ai-scan-line" aria-hidden />
           </div>
-          <h1 key={`heading-${phase}`}>{phaseHeadings[phase]}</h1>
-          <p className="ai-processing-phase" key={`phase-${phase}`}>Qwen is {phases[phase].toLowerCase()}...</p>
-          <div className="ai-progress-dots" aria-label="Analysis in progress"><i /><i /><i /></div>
-          {error && <p className="ai-processing-error">{error}</p>}
+          <h1 key={error ? "error" : `heading-${phase}`}>{error ? "Analysis paused" : phaseHeadings[phase]}</h1>
+          {error
+            ? <div className="ai-processing-error" role="alert"><p>{error}</p><button className="secondary-btn" type="button" onClick={() => router.replace(stage === "project" ? `/repair/${requestId}/review` : "/home")}>{stage === "project" ? "Back to review" : "Back to Home"}</button></div>
+            : <><p className="ai-processing-phase" key={`phase-${phase}`}>{phases[phase]}…</p>
+              <div className="ai-progress-dots" aria-label="Analysis in progress"><i /><i /><i /></div></>}
         </div>
       </section>
     </main>

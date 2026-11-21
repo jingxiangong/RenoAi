@@ -5,11 +5,12 @@ import { RepairResultSchema, type RepairResult } from "@/schemas/repair-result.s
 import { problemBriefSystemPrompt } from "./prompts/problem-brief";
 import { repairAgentSystemPrompt } from "./prompts/repair-agent";
 import { generateStructured } from "./openai-compatible";
+import type { QwenCall } from "./qwen-quota";
 
 type ClarificationAnswer = { question: string; answer: string };
 type Input = {
   request_id: string;
-  property: Property;
+  property: Pick<Property, "id" | "home_type">;
   description: string;
   category_hint?: string;
   clarification?: string;
@@ -18,10 +19,6 @@ type Input = {
   clarification_history?: ClarificationAnswer[];
   image_data_urls?: string[];
 };
-
-function normaliseQuestion(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-}
 
 function demoAnalysis(input: Input): ProblemAnalysis {
   const text = `${input.description} ${input.clarification || ""}`.toLowerCase();
@@ -68,50 +65,42 @@ function demoAnalysis(input: Input): ProblemAnalysis {
   };
 }
 
-export async function createProblemAnalysis(input: Input): Promise<ProblemAnalysis> {
-  const existingBrief = input.existing_problem_brief || input.existing_brief;
-  const analysis = process.env.AI_DEMO_MODE === "true" || !process.env.QWEN_API_KEY
+export async function createProblemAnalysis(
+  input: Input,
+  email: string,
+  stage: Extract<QwenCall["stage"], "extract" | "clarify">,
+): Promise<ProblemAnalysis> {
+  const analysis = process.env.AI_DEMO_MODE === "true"
     ? demoAnalysis(input)
     : await generateStructured({
-    baseURL: process.env.QWEN_BASE_URL || "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
-    apiKey: process.env.QWEN_API_KEY,
-    model: process.env.QWEN_MODEL || "qwen3-vl-flash",
-    schema: ProblemAnalysisSchema,
-    system: problemBriefSystemPrompt,
-    input: {
-      selected_property: input.property,
-      description: input.description,
-      selected_issue_type: input.category_hint,
-      category_hint: input.category_hint,
-      existing_problem_brief: existingBrief,
-      clarification_history: input.clarification_history,
-      new_clarification: input.clarification,
-    },
-    userContent: [
-      {
-        type: "text",
-        text: JSON.stringify({
+        call: { email, requestId: input.request_id, stage },
+        model: process.env.QWEN_MODEL || "qwen3-vl-flash",
+        schema: ProblemAnalysisSchema,
+        system: stage === "clarify"
+          ? `${problemBriefSystemPrompt}\nThis is the last clarification round. Keep unknown details as Unknown and return no questions.`
+          : problemBriefSystemPrompt,
+        input: {
+          request_id: input.request_id,
           selected_property: input.property,
           description: input.description,
           selected_issue_type: input.category_hint,
-          category_hint: input.category_hint,
-          existing_problem_brief: existingBrief,
+          existing_problem_brief: input.existing_problem_brief || input.existing_brief,
           clarification_history: input.clarification_history,
           new_clarification: input.clarification,
-        }),
-      },
-      ...(input.image_data_urls || []).slice(0, 4).map((url) => ({ type: "image_url", image_url: { url } })),
-    ],
-    });
+        },
+        images: stage === "extract" ? input.image_data_urls : undefined,
+      });
 
-  const askedBefore = new Set((input.clarification_history || []).map(({ question }) => normaliseQuestion(question)));
-  const missingQuestions = analysis.missing_questions.filter((question) => !askedBefore.has(normaliseQuestion(question)));
-
-  // Unknown is an accepted value. Do not trap the homeowner in a loop when the model only repeats answered questions.
-  if (!analysis.is_complete && askedBefore.size > 0 && missingQuestions.length === 0) {
-    return { ...analysis, is_complete: true, missing_questions: [] };
+  const problem_brief = {
+    ...analysis.problem_brief,
+    request_id: input.request_id,
+    property_id: input.property.id,
+    property: input.property.home_type,
+  };
+  if (stage === "clarify" || analysis.is_complete || !analysis.missing_questions.length) {
+    return { problem_brief, is_complete: true, missing_questions: [] };
   }
-  return { ...analysis, missing_questions: missingQuestions };
+  return { ...analysis, problem_brief };
 }
 
 function demoRepair(brief: ProblemBrief): RepairResult {
@@ -122,14 +111,10 @@ function demoRepair(brief: ProblemBrief): RepairResult {
   return { likely_issue: "Cause requires on-site inspection", urgency: "Medium", recommended_work: "Inspect the affected area and confirm the failure before carrying out repair work.", estimated_duration: "To be confirmed after inspection", site_visit_required: true, confidence: "Low" };
 }
 
-export async function analyseRepairWithQwen(brief: ProblemBrief): Promise<RepairResult> {
+export async function analyseRepairWithQwen(brief: ProblemBrief, email: string): Promise<RepairResult> {
   if (process.env.AI_DEMO_MODE === "true") return demoRepair(brief);
-  if (!process.env.QWEN_API_KEY) {
-    throw new Error("Qwen is not configured. Set QWEN_API_KEY, or explicitly enable AI_DEMO_MODE.");
-  }
   return generateStructured({
-    baseURL: process.env.QWEN_BASE_URL || "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
-    apiKey: process.env.QWEN_API_KEY,
+    call: { email, requestId: brief.request_id, stage: "repair" },
     model: process.env.QWEN_REPAIR_MODEL || process.env.QWEN_MODEL || "qwen3-vl-flash",
     schema: RepairResultSchema,
     system: repairAgentSystemPrompt,

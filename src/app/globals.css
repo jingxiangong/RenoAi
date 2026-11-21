@@ -483,6 +483,10 @@ button { touch-action: manipulation; }
 .composer-add { cursor: pointer; }
 .composer-add span, .composer-video span { font-size: 13px; font-weight: 400; letter-spacing: -.2px; }
 .composer-thumb { width: 69px; height: 69px; flex: 0 0 69px; border-radius: 12px; object-fit: cover; }
+.composer-attachment { position: relative; flex: 0 0 69px; width: 69px; height: 69px; }
+.composer-remove-attachment { position: absolute; top: 3px; right: 3px; display: grid; width: 24px; height: 24px; padding: 0; place-items: center; border: 0; border-radius: 50%; background: rgba(21, 34, 29, .85); color: white; cursor: pointer; }
+.composer-remove-attachment:focus-visible { outline: 2px solid white; outline-offset: 1px; }
+.composer-error { margin: 0 4px; color: #a53318; font-size: 13px; line-height: 1.4; }
 .composer-selected-issue { display: flex; min-height: 40px; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 11px 9px 13px; border: 1px solid #e5e7eb; border-radius: 13px; color: #111; background: #fff; font-size: 13px; font-weight: 400; line-height: 18px; animation: selected-issue-in .18s ease-out; }
 .composer-selected-issue span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .composer-selected-issue button { display: grid; width: 26px; height: 26px; flex: 0 0 26px; padding: 0; place-items: center; border: 0; border-radius: 50%; color: #94989e; background: transparent; cursor: pointer; }

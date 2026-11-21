@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { RepairRequest } from "@/lib/local-store";
 import { useLocalStore } from "@/lib/local-store-context";
+import { MAX_CLARIFICATION_ANSWER_LENGTH } from "@/lib/repair-limits";
+import { readRepairResponse } from "@/lib/repair-response";
 import { ProblemBriefCard } from "./ProblemBriefCard";
 
 export function ClarificationForm() {
@@ -64,8 +66,7 @@ export function ClarificationForm() {
           clarification: newAnswers.map(({ question, answer }) => `${question}: ${answer}`).join("\n"),
         }),
       });
-      if (!response.ok) throw new Error();
-      const analysis = await response.json();
+      const analysis = await readRepairResponse(response, "We couldn't update the brief.");
       const next = { ...item!, analysis, clarification_history, status: analysis.is_complete ? "review" as const : "collecting_info" as const };
       localStore.saveRequest(next);
       if (analysis.is_complete) {
@@ -76,9 +77,9 @@ export function ClarificationForm() {
       setAnswers(analysis.missing_questions.map(() => ""));
       setQuestionIndex(0);
       setBusy(false);
-    } catch {
+    } catch (error) {
       setBusy(false);
-      setError("We couldn't update the brief. Please try again.");
+      setError(error instanceof Error ? error.message : "We couldn't update the brief.");
     }
   }
 
@@ -118,10 +119,10 @@ export function ClarificationForm() {
           <section className="clarification-question-wrap" key={currentQuestion}>
             <h1 id="clarification-question">{currentQuestion}</h1>
             <p>Answer only what you know. A short response is enough.</p>
-            <textarea autoFocus aria-label="Your answer" placeholder="Type your answer..." value={currentAnswer} onChange={(event) => setAnswers((old) => old.map((answer, index) => index === questionIndex ? event.target.value : answer))} />
+            <textarea autoFocus aria-label="Your answer" placeholder="Type your answer..." maxLength={MAX_CLARIFICATION_ANSWER_LENGTH} value={currentAnswer} onChange={(event) => setAnswers((old) => old.map((answer, index) => index === questionIndex ? event.target.value : answer))} />
           </section>
 
-          {error && <p className="clarification-error" role="alert">{error}</p>}
+          {error && <div className="clarification-error"><p role="alert">{error}</p><button className="secondary-btn" type="button" onClick={() => router.replace(`/repair/${requestId}/review`)}>Review current brief</button></div>}
           <div className="clarification-actions">
             {questionIndex > 0 && <button className="clarification-back" type="button" onClick={() => setQuestionIndex((index) => index - 1)}><ArrowLeft size={17} /> Back</button>}
             <button className="clarification-continue" type="submit" disabled={!currentAnswer.trim() || busy}>

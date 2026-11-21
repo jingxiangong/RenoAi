@@ -1,12 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ClipboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUp, BrickWall, DoorClosed, Droplet, Grid2X2, LoaderCircle, Mic, Plus, Square, Video, X, Zap } from "lucide-react";
 import { useLocalStore } from "@/lib/local-store-context";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { cn, newId } from "@/lib/utils";
 import type { MediaItem } from "@/schemas/project-brief.schema";
+import {
+  MAX_AI_IMAGE_DATA_URL_LENGTH,
+  MAX_ATTACHMENT_BYTES,
+  MAX_REPAIR_DESCRIPTION_LENGTH,
+  MAX_REPAIR_PHOTOS,
+} from "@/lib/repair-limits";
 
 type SpeechResult = {
   isFinal: boolean;
@@ -35,6 +41,32 @@ const categories = [
   { label: "Tiles / Floor", sub: "Tiles, floor", icon: Grid2X2, tint: "#6b7280" },
 ];
 
+type Attachment = { id: string; file: File };
+
+function AttachmentPreview({ file, onRemove, disabled }: { file: File; onRemove: () => void; disabled: boolean }) {
+  const imageRef = useRef<HTMLImageElement>(null);
+  const isPhoto = file.type.startsWith("image/");
+
+  useEffect(() => {
+    const image = imageRef.current;
+    if (!image) return;
+    const url = URL.createObjectURL(file);
+    image.src = url;
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  return (
+    <div className="composer-attachment">
+      {isPhoto
+        ? <img ref={imageRef} className="composer-thumb" alt={file.name} />
+        : <div className="composer-video"><Video aria-hidden size={22} /><span>Video</span></div>}
+      <button className="composer-remove-attachment" type="button" aria-label={`Remove ${file.name}`} onClick={onRemove} disabled={disabled}>
+        <X aria-hidden size={13} />
+      </button>
+    </div>
+  );
+}
+
 export function RepairComposer() {
   const localStore = useLocalStore();
   const router = useRouter();
@@ -43,13 +75,45 @@ export function RepairComposer() {
   const voiceStartTextRef = useRef("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<string>();
-  const [files, setFiles] = useState<File[]>([]);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [attachmentError, setAttachmentError] = useState("");
   const [busy, setBusy] = useState(false);
   const [listening, setListening] = useState(false);
 
   useEffect(() => () => recognitionRef.current?.abort(), []);
 
-  function selectFiles(list: FileList | null) { if (list) setFiles((old) => [...old, ...Array.from(list)]); }
+  function addFiles(files: File[]) {
+    if (busy || !files.length) return;
+    const next = [...attachments];
+    let photoCount = next.filter(({ file }) => file.type.startsWith("image/")).length;
+    let error = "";
+    for (const file of files) {
+      const isPhoto = file.type.startsWith("image/");
+      if (!isPhoto && !file.type.startsWith("video/")) {
+        error = "Choose a photo or video.";
+        continue;
+      }
+      if (file.size > MAX_ATTACHMENT_BYTES) {
+        error = `${file.name} is larger than 25 MB.`;
+        continue;
+      }
+      if (isPhoto && photoCount >= MAX_REPAIR_PHOTOS) {
+        error = `You can add up to ${MAX_REPAIR_PHOTOS} photos per repair.`;
+        continue;
+      }
+      next.push({ id: newId("attachment"), file });
+      if (isPhoto) photoCount++;
+    }
+    setAttachments(next);
+    setAttachmentError(error);
+  }
+
+  function pasteImages(event: ClipboardEvent<HTMLTextAreaElement>) {
+    const images = Array.from(event.clipboardData.files).filter((file) => file.type.startsWith("image/"));
+    if (!images.length) return;
+    if (!event.clipboardData.getData("text/plain")) event.preventDefault();
+    addFiles(images);
+  }
 
   async function imageDataUrl(file: File) {
     const raw = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(file); });
@@ -57,7 +121,13 @@ export function RepairComposer() {
     const scale = Math.min(1, 1280 / Math.max(image.width, image.height));
     const canvas = document.createElement("canvas"); canvas.width = Math.round(image.width * scale); canvas.height = Math.round(image.height * scale);
     canvas.getContext("2d")?.drawImage(image, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL("image/jpeg", .76);
+    const primary = canvas.toDataURL("image/jpeg", .76);
+    if (primary.length <= MAX_AI_IMAGE_DATA_URL_LENGTH) return primary;
+    const compressed = canvas.toDataURL("image/jpeg", .52);
+    if (compressed.length > MAX_AI_IMAGE_DATA_URL_LENGTH) {
+      throw new Error(`${file.name} could not be compressed enough. Try a smaller photo.`);
+    }
+    return compressed;
   }
 
   async function uploadEvidence(requestId: string, file: File, index: number): Promise<MediaItem> {
@@ -91,14 +161,14 @@ export function RepairComposer() {
   async function submit() {
     if (!description.trim() || busy) return;
     setBusy(true);
+    setAttachmentError("");
     const id = newId("request");
     try {
-      const oversized = files.find((file) => file.size > 25 * 1024 * 1024);
-      if (oversized) throw new Error(`${oversized.name} is larger than 25 MB`);
-      const [uploadedMedia, image_data_urls] = await Promise.all([
-        Promise.all(files.map((file, index) => uploadEvidence(id, file, index))),
-        Promise.all(files.filter((file) => file.type.startsWith("image")).slice(0, 4).map(imageDataUrl)),
-      ]);
+      const files = attachments.map(({ file }) => file);
+      const image_data_urls = await Promise.all(
+        files.filter((file) => file.type.startsWith("image/")).map(imageDataUrl),
+      );
+      const uploadedMedia = await Promise.all(files.map((file, index) => uploadEvidence(id, file, index)));
       const evidence = uploadedMedia.reduce<{ photos: MediaItem[]; videos: MediaItem[] }>((acc, item) => {
         acc[item.type === "photo" ? "photos" : "videos"].push(item);
         return acc;
@@ -108,7 +178,7 @@ export function RepairComposer() {
       router.push(`/repair/${id}/processing`);
     } catch (error) {
       setBusy(false);
-      alert(error instanceof Error ? error.message : "We couldn't upload the evidence. Please try again.");
+      setAttachmentError(error instanceof Error ? error.message : "We couldn't upload the evidence. Please try again.");
     }
   }
 
@@ -135,7 +205,7 @@ export function RepairComposer() {
         .join(" ")
         .replace(/\s+/g, " ")
         .trim();
-      setDescription([voiceStartTextRef.current, spokenText].filter(Boolean).join(" "));
+      setDescription([voiceStartTextRef.current, spokenText].filter(Boolean).join(" ").slice(0, MAX_REPAIR_DESCRIPTION_LENGTH));
     };
     recognition.onerror = (event) => {
       setListening(false);
@@ -177,14 +247,20 @@ export function RepairComposer() {
     <>
       <section className="composer-card">
         <div className="composer-photos">
-          <button className="composer-add" type="button" aria-label="Add photos or video" onClick={() => fileRef.current?.click()}>
+          <button className="composer-add" type="button" aria-label="Add photos or video" disabled={busy} onClick={() => fileRef.current?.click()}>
             <Plus size={25} strokeWidth={1.7} />
             <span>Add</span>
           </button>
-          {files.map((file, index) => file.type.startsWith("image")
-            ? <img className="composer-thumb" key={`${file.name}-${index}`} src={URL.createObjectURL(file)} alt="Selected repair evidence" />
-            : <div className="composer-video" key={`${file.name}-${index}`}><Video aria-hidden size={22} /><span>Video</span></div>)}
-          <input ref={fileRef} hidden type="file" accept="image/*,video/*" multiple onChange={(e) => selectFiles(e.target.files)} />
+          {attachments.map(({ id, file }) => (
+            <AttachmentPreview key={id} file={file} disabled={busy} onRemove={() => {
+              setAttachments((current) => current.filter((attachment) => attachment.id !== id));
+              setAttachmentError("");
+            }} />
+          ))}
+          <input ref={fileRef} hidden type="file" accept="image/*,video/*" multiple onChange={(event) => {
+            addFiles(Array.from(event.target.files ?? []));
+            event.target.value = "";
+          }} />
         </div>
         {category && (
           <div className="composer-selected-issue" role="status">
@@ -192,9 +268,18 @@ export function RepairComposer() {
             <button type="button" aria-label={`Remove ${category} issue type`} onClick={() => setCategory(undefined)}><X size={14} strokeWidth={1.8} /></button>
           </div>
         )}
-        <textarea className="composer-textarea" aria-label="Describe the repair" placeholder="My bedroom door is scraping the floor and won't close properly..." value={description} onChange={(e) => setDescription(e.target.value)} />
+        <textarea
+          className="composer-textarea"
+          aria-label="Describe the repair"
+          placeholder="Describe the repair. You can paste a photo here."
+          maxLength={MAX_REPAIR_DESCRIPTION_LENGTH}
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
+          onPaste={pasteImages}
+        />
+        {attachmentError && <p className="composer-error" role="alert">{attachmentError}</p>}
         <div className="composer-toolbar">
-          <button className="composer-icon-btn" type="button" aria-label="Add attachment" onClick={() => fileRef.current?.click()}><Plus size={18} /></button>
+          <button className="composer-icon-btn" type="button" aria-label="Add attachment" disabled={busy} onClick={() => fileRef.current?.click()}><Plus size={18} /></button>
           <div className="composer-voice-action">
             {listening && <span className="composer-listening-copy" role="status">Listening…</span>}
             <button

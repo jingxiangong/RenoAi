@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { createProblemAnalysis } from "@/server/ai/qwen";
+import { ExtractionInputSchema, repairErrorResponse } from "@/server/ai/repair-api";
 import { auth } from "@/auth";
 
 export const POST = auth(async function POST(request) {
-  if (!request.auth) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  try { return NextResponse.json(await createProblemAnalysis(await request.json())); }
-  catch (error) { console.error(error); return NextResponse.json({ error: "Unable to create problem brief" }, { status: 500 }); }
+  const email = request.auth?.user?.email;
+  if (!email) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  try {
+    const input = ExtractionInputSchema.parse(await request.json());
+    return NextResponse.json(await createProblemAnalysis(input, email, "extract"));
+  } catch (error) {
+    return repairErrorResponse(error, "Unable to create problem brief.");
+  }
 });
