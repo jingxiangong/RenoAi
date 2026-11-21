@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { localStore, type RepairRequest } from "@/lib/local-store";
+import type { RepairRequest } from "@/lib/local-store";
+import { useLocalStore } from "@/lib/local-store-context";
 import { ProblemBriefCard } from "./ProblemBriefCard";
 
 export function ClarificationForm() {
+  const localStore = useLocalStore();
   const { requestId } = useParams<{ requestId: string }>();
   const router = useRouter();
   const [item, setItem] = useState<RepairRequest>();
@@ -17,9 +19,10 @@ export function ClarificationForm() {
 
   useEffect(() => {
     const value = localStore.request(requestId);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Browser storage is read after hydration.
     setItem(value);
     setAnswers(value?.analysis?.missing_questions.map(() => "") || []);
-  }, [requestId]);
+  }, [localStore, requestId]);
 
   useEffect(() => {
     const previous = document.body.style.overflow;

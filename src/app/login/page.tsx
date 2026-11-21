@@ -25,12 +25,12 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           <Image
             className="login-brand-mark"
             src="/brand/renoai-mark.png"
-            alt="RenoaAI"
+            alt="RenoAI"
             width={56}
             height={56}
             priority
           />
-          <h1>RenoaAI</h1>
+          <h1>RenoAI</h1>
         </div>
 
         <div className="social-login-list" aria-label="Sign in options">

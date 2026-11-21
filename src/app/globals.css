@@ -714,7 +714,7 @@ button { touch-action: manipulation; }
 .work-content ul { margin: 0; padding: 0 0 0 14px; color: #333; font-size: 12px; line-height: 1.85; }
 .trade { display: grid; flex: 0 0 auto; align-content: start; justify-items: end; gap: 4px; }
 .trade span { padding: 4px 12px; border-radius: 99px; color: #555; background: #eeecea; font-size: 12px; font-weight: 500; }
-.estimate-grid { display: grid; grid-template-columns: .9fr 1fr 1.25fr; gap: 12px; padding-top: 12px; }
+.estimate-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 12px; }
 .estimate-grid strong { color: #111; font-size: 14px; line-height: 1.35; overflow-wrap: anywhere; }
 .estimate-note { display: flex; gap: 8px; margin: 14px 0 0; padding: 10px 12px; border-radius: 12px; color: #888; background: #f0ede8; font-size: 12px; line-height: 1.6; }
 .estimate-note svg { flex: 0 0 auto; margin-top: 2px; color: #999; }
@@ -725,8 +725,6 @@ button { touch-action: manipulation; }
 
 @media (max-width: 359px) {
   .result-brief-page { padding-right: 12px; padding-left: 12px; }
-  .estimate-grid { grid-template-columns: 1fr 1fr; }
-  .estimate-grid > div:last-child { grid-column: 1 / -1; }
 }
 
 /* Google account settings — mobile first. */

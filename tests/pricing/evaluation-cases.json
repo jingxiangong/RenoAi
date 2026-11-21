@@ -1,0 +1,10 @@
+[
+  {"id":"door-alignment","item":"door","symptom":"door rubbing floor","expected":"DOOR_ALIGNMENT"},
+  {"id":"door-hinge","item":"door hinge","symptom":"loose door hinge","expected":"DOOR_HINGE_REPAIR"},
+  {"id":"missing-symptom","item":"door","symptom":"problem unknown","expected":null},
+  {"id":"mismatched-item","item":"window","symptom":"door rubbing floor","expected":null},
+  {"id":"competing-jobs","item":"door","symptom":"door sagging from hinge and door rubbing floor","expected":null},
+  {"id":"negated-symptom","item":"door","symptom":"door is not sticking","expected":null},
+  {"id":"non-english-symptom","item":"door","symptom":"门关不上","expected":null},
+  {"id":"unsupported-item","item":"window","symptom":"window frame loose","expected":null}
+]

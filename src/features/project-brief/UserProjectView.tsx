@@ -34,14 +34,11 @@ export function UserProjectView({ project, description, category }: RequestBrief
   const router = useRouter();
   const price = money(project);
   const photo = project.evidence.photos[0]?.thumbnail_url || project.evidence.photos[0]?.storage_url;
-  const isKitchenLeak = project.problem.affected_item.toLowerCase().includes("kitchen sink");
-  const observations = isKitchenLeak
-    ? ["Water visible under the sink", "Leak appears near the pipe joint", "Cabinet base is wet"]
-    : [
-        `Issue reported at ${project.problem.location.toLowerCase()}`,
-        project.problem.duration ? `Present for ${project.problem.duration.toLowerCase()}` : "Condition needs confirmation on site",
-        project.problem.condition || "Repair area should be inspected before work starts",
-      ];
+  const observations = [
+    project.problem.observed_problem,
+    project.problem.duration ? `Present for ${project.problem.duration}` : undefined,
+    project.problem.condition,
+  ].filter(Boolean);
   const trade = category?.toLowerCase().includes("water") ? "Plumbing" : category || "General repair";
   const work = project.repair.recommended_work
     .split(/\n|;|\.(?=\s|$)/)
@@ -66,7 +63,7 @@ export function UserProjectView({ project, description, category }: RequestBrief
       </section>
 
       <section className="brief-section input-section">
-        <div className="brief-heading"><h2>Your input</h2><button type="button">Edit</button></div>
+        <div className="brief-heading"><h2>Your input</h2></div>
         <div className="input-content">
           <div className="input-photo">{photo && <img src={photo} alt="Submitted repair" />}</div>
           <div className="input-details">
@@ -80,7 +77,7 @@ export function UserProjectView({ project, description, category }: RequestBrief
         <div className="brief-heading icon-heading"><Sparkles size={17} /><h2>AI assessment</h2></div>
         <div className="assessment-field"><small>Likely issue</small><strong>{project.repair.likely_issue}</strong></div>
         <div className="assessment-field"><small>Observed</small><div className="observations">{observations.map((observation) => <span key={observation}><CheckCircle2 size={13} />{observation}</span>)}</div></div>
-        <div className="assessment-field urgency"><small>Urgency</small><strong><i className={project.repair.urgency.toLowerCase()} />{project.repair.urgency === "Medium" ? "Low to medium" : project.repair.urgency}</strong></div>
+        <div className="assessment-field urgency"><small>Urgency</small><strong><i className={project.repair.urgency.toLowerCase()} />{project.repair.urgency}</strong></div>
       </section>
 
       <section className="brief-section work-section">
@@ -96,13 +93,14 @@ export function UserProjectView({ project, description, category }: RequestBrief
         <div className="estimate-grid">
           <div><small>Price range</small><strong>{price}</strong></div>
           <div><small>Estimated duration</small><strong>{project.repair.estimated_duration}</strong></div>
+          <div><small>Model confidence</small><strong>{project.repair.confidence}</strong></div>
           <div><small>Site visit</small><strong>{project.repair.site_visit_required ? "Recommended" : "Not required"}</strong></div>
         </div>
         <p className="estimate-note"><Lightbulb size={15} /> Final scope and price may vary after on-site inspection.</p>
       </section>
 
       <div className="brief-actions no-print">
-        <button className="save-request" type="button" onClick={() => router.push("/requests")}><BookmarkCheck size={17} /> Save request</button>
+        <button className="save-request" type="button" onClick={() => router.push("/requests")}><BookmarkCheck size={17} /> View saved requests</button>
         <button className="export-brief" type="button" onClick={() => window.print()}><FileText size={17} /> Export PDF</button>
       </div>
     </article>

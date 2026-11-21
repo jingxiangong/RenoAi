@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { localStore, type RepairRequest } from "@/lib/local-store";
+import type { RepairRequest } from "@/lib/local-store";
+import { useLocalStore } from "@/lib/local-store-context";
 
 function route(item: RepairRequest) {
   if (item.status === "ready") return `/repair/${item.id}/result`;
@@ -13,6 +14,7 @@ function route(item: RepairRequest) {
 }
 
 function RequestCard({ item, onDelete }: { item: RepairRequest; onDelete: (item: RepairRequest) => void }) {
+  const localStore = useLocalStore();
   const brief = item.analysis?.problem_brief;
   const property = localStore.selectedProperty();
   const title = brief
@@ -55,8 +57,9 @@ function RequestCard({ item, onDelete }: { item: RepairRequest; onDelete: (item:
 }
 
 export function RequestList() {
+  const localStore = useLocalStore();
   const [items, setItems] = useState<RepairRequest[]>([]);
-  useEffect(() => { const sync = () => setItems(localStore.requests()); sync(); void localStore.syncFromCloud(); window.addEventListener("renoai:change", sync); return () => window.removeEventListener("renoai:change", sync); }, []);
+  useEffect(() => { const sync = () => setItems(localStore.requests()); sync(); void localStore.syncFromCloud(); window.addEventListener("renoai:change", sync); return () => window.removeEventListener("renoai:change", sync); }, [localStore]);
 
   function deleteRequest(item: RepairRequest) {
     const title = item.analysis?.problem_brief.affected_item || item.category_hint || "this request";

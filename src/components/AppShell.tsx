@@ -5,21 +5,22 @@ import Image from "next/image";
 import { ChevronDown, LogOut } from "lucide-react";
 import { BottomNavigation } from "@/features/navigation/BottomNavigation";
 import { signOutAction } from "@/app/actions/auth";
-import { localStore } from "@/lib/local-store";
+import { useLocalStore } from "@/lib/local-store-context";
 import { useEffect, useState } from "react";
 import type { Property } from "@/schemas/property.schema";
 
 export function AppShell({ children, navigation = true }: { children: React.ReactNode; navigation?: boolean }) {
+  const localStore = useLocalStore();
   const [property, setProperty] = useState<Property>();
   useEffect(() => {
     const sync = () => setProperty(localStore.selectedProperty());
     sync(); window.addEventListener("renoai:change", sync);
     return () => window.removeEventListener("renoai:change", sync);
-  }, []);
+  }, [localStore]);
   return (
     <div className="shell">
       <header className="topbar">
-        <Link className="brand" href="/home"><Image className="brand-mark" src="/brand/renoai-mark.png" alt="" width={34} height={34}/> RenoaAI</Link>
+        <Link className="brand" href="/home"><Image className="brand-mark" src="/brand/renoai-mark.png" alt="" width={34} height={34}/> RenoAI</Link>
         <div className="topbar-actions">
           <Link className="property-pill" href="/onboarding"><span>{property?.name || "My Home"}</span><ChevronDown size={15}/></Link>
           <form action={signOutAction}>

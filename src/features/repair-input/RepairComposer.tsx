@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUp, BrickWall, DoorClosed, Droplet, Grid2X2, LoaderCircle, Mic, Plus, Square, Video, X, Zap } from "lucide-react";
-import { localStore } from "@/lib/local-store";
+import { useLocalStore } from "@/lib/local-store-context";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { cn, newId } from "@/lib/utils";
 import type { MediaItem } from "@/schemas/project-brief.schema";
@@ -36,6 +36,7 @@ const categories = [
 ];
 
 export function RepairComposer() {
+  const localStore = useLocalStore();
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);

@@ -3,15 +3,18 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { localStore, type RepairRequest } from "@/lib/local-store";
+import type { RepairRequest } from "@/lib/local-store";
+import { useLocalStore } from "@/lib/local-store-context";
 import { UserProjectView } from "@/features/project-brief/UserProjectView";
 
 export function ResultPage() {
+  const localStore = useLocalStore();
   const router = useRouter();
   const { requestId } = useParams<{ requestId: string }>(); const [item, setItem] = useState<RepairRequest>();
   useEffect(() => {
     let cancelled = false;
     const request = localStore.request(requestId);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Browser storage is read after hydration.
     setItem(request);
     if (!request?.project || request.project.pricing.available) return;
 
@@ -33,7 +36,7 @@ export function ResultPage() {
       .catch(() => undefined);
 
     return () => { cancelled = true; };
-  }, [requestId]);
+  }, [localStore, requestId]);
 
   function goBack() {
     const previousPageIsInApp = document.referrer

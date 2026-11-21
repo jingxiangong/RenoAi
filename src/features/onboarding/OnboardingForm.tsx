@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { localStore } from "@/lib/local-store";
+import { useLocalStore } from "@/lib/local-store-context";
 import { newId } from "@/lib/utils";
 import type { Property } from "@/schemas/property.schema";
 
@@ -34,6 +34,7 @@ function Stepper({ step }: { step: 1 | 2 }) {
 }
 
 export function OnboardingForm({ isAddingProperty = false }: { isAddingProperty?: boolean }) {
+  const localStore = useLocalStore();
   const router = useRouter();
   const [existing, setExisting] = useState<Property>();
   const [step, setStep] = useState<1 | 2>(1);
@@ -45,10 +46,11 @@ export function OnboardingForm({ isAddingProperty = false }: { isAddingProperty?
     const property = localStore.selectedProperty();
     if (!localStore.properties().some((item) => item.id === property.id)) return;
     if (!property) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Browser storage is read after hydration.
     setExisting(property);
     setHomeType(property.home_type);
     setArea(property.address.address_line);
-  }, [isAddingProperty]);
+  }, [isAddingProperty, localStore]);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();

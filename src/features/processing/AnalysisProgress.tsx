@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { SquarePen } from "lucide-react";
-import { localStore, type RepairRequest } from "@/lib/local-store";
+import type { RepairRequest } from "@/lib/local-store";
+import { useLocalStore } from "@/lib/local-store-context";
 
 const problemPhases = [
   "Reading your photos and description",
@@ -19,6 +20,7 @@ const projectPhases = [
 ];
 
 export function AnalysisProgress({ stage }: { stage: "problem" | "project" }) {
+  const localStore = useLocalStore();
   const { requestId } = useParams<{ requestId: string }>();
   const router = useRouter();
   const started = useRef(false);
@@ -40,6 +42,7 @@ export function AnalysisProgress({ stage }: { stage: "problem" | "project" }) {
     started.current = true;
     const request = localStore.request(requestId);
     setItem(request);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Browser storage is read after hydration.
     if (!request) { setError("Request not found."); return; }
 
     const startedAt = Date.now();
@@ -94,7 +97,7 @@ export function AnalysisProgress({ stage }: { stage: "problem" | "project" }) {
         router.replace(analysis.is_complete ? `/repair/${requestId}/review` : `/repair/${requestId}/clarify`);
       })
       .catch(() => setError("Qwen AI couldn't analyse this request. Please return home and try again."));
-  }, [requestId, router, stage]);
+  }, [localStore, requestId, router, stage]);
 
   const firstPhoto = item?.evidence.photos[0];
 

@@ -1,22 +1,22 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { cacheScopeForEmail } from "@/server/cache-scope";
 import { PropertySchema } from "@/schemas/property.schema";
 import { createRenoSupabase, EVIDENCE_BUCKET, ownerIdForEmail } from "@/server/supabase";
 
 type StoredMedia = { storage_path?: string };
 type StoredRequest = { id: string; evidence?: { photos?: StoredMedia[]; videos?: StoredMedia[] } };
 
-function ownerFor(request: { auth?: { user?: { email?: string | null } } | null }) {
-  const email = request.auth?.user?.email;
-  if (!email) return null;
-  return ownerIdForEmail(email);
-}
-
 export const GET = auth(async function GET(request) {
-  const ownerId = ownerFor(request);
-  if (!ownerId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  const email = request.auth?.user?.email;
+  if (!email) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+
+  if (request.headers.get("x-reno-cache-scope") !== cacheScopeForEmail(email)) {
+    return NextResponse.json({ error: "Account changed. Reload and try again." }, { status: 409 });
+  }
 
   try {
+    const ownerId = ownerIdForEmail(email);
     const supabase = createRenoSupabase(ownerId);
     const [properties, requests] = await Promise.all([
       supabase.from("reno_properties").select("data,updated_at").eq("owner_id", ownerId).order("updated_at", { ascending: false }),
@@ -35,10 +35,15 @@ export const GET = auth(async function GET(request) {
 });
 
 export const POST = auth(async function POST(request) {
-  const ownerId = ownerFor(request);
-  if (!ownerId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  const email = request.auth?.user?.email;
+  if (!email) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+
+  if (request.headers.get("x-reno-cache-scope") !== cacheScopeForEmail(email)) {
+    return NextResponse.json({ error: "Account changed. Reload and try again." }, { status: 409 });
+  }
 
   try {
+    const ownerId = ownerIdForEmail(email);
     const body = await request.json() as { kind?: "property" | "request"; data?: unknown };
     const supabase = createRenoSupabase(ownerId);
     if (body.kind === "property") {
@@ -68,10 +73,15 @@ export const POST = auth(async function POST(request) {
 });
 
 export const DELETE = auth(async function DELETE(request) {
-  const ownerId = ownerFor(request);
-  if (!ownerId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  const email = request.auth?.user?.email;
+  if (!email) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+
+  if (request.headers.get("x-reno-cache-scope") !== cacheScopeForEmail(email)) {
+    return NextResponse.json({ error: "Account changed. Reload and try again." }, { status: 409 });
+  }
 
   try {
+    const ownerId = ownerIdForEmail(email);
     const body = await request.json() as { kind?: "property" | "request"; id?: string };
     if (!body.id || !body.kind) return NextResponse.json({ error: "Invalid delete request" }, { status: 400 });
     const supabase = createRenoSupabase(ownerId);

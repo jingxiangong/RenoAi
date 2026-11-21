@@ -1,218 +1,60 @@
 # RenoAI
 
-**A mobile-first repair triage assistant for Singapore homes.**
+**AI-assisted repair triage for Singapore homes.** RenoAI turns a description and optional photos into an editable repair brief. A separate pricing engine looks up an indicative SGD range and abstains when the evidence is insufficient or the match is ambiguous.
 
-RenoAI turns an unclear repair report — a short message, a few photos, and an optional issue category — into a structured, homeowner-confirmed brief with a likely diagnosis, urgency, recommended work, expected duration, and a grounded SGD price range.
+[Walk through a sample repair](docs/walkthrough.md) · [Explore the architecture](docs/architecture.md) · [Reproduce the pricing evaluation](docs/evaluation.md)
 
-[Live demo](https://reno-ai-three.vercel.app) · [Architecture](docs/architecture.md)
+## How it works
 
-## The problem
-
-Home repair requests often begin with incomplete information: “the door is broken,” “the light stopped working,” or “there is water on the floor.” Homeowners may not know what details matter, how urgent the issue is, what a reasonable price looks like, or how to explain the job to a contractor.
-
-That creates three avoidable problems:
-
-- contractors spend time asking the same basic questions;
-- homeowners receive inconsistent or difficult-to-compare quotes;
-- an unconstrained AI can sound confident while inventing repair facts or prices.
-
-## The solution
-
-RenoAI creates a clear decision boundary between AI interpretation and price estimation:
-
-1. The homeowner selects a property and describes the issue using text and visual evidence.
-2. Qwen extracts a structured `ProblemBrief` and asks only the missing questions that could change the repair decision.
-3. The homeowner edits and confirms the brief before any final assessment is generated.
-4. Two independent processes run in parallel:
-   - the Repair Agent produces the likely issue, urgency, scope, duration, and confidence;
-   - the deterministic Price Engine matches the confirmed facts against a reviewed Singapore pricing knowledge base.
-5. Both results are merged into one canonical `ProjectBrief` for the homeowner view, request history, contractor view, and printable PDF.
-
-## Why RenoAI is different
-
-### AI does not decide the price
-
-Qwen never generates a price. The Price Engine requires both an affected-item match and a specific symptom match. If the evidence is ambiguous or two repair jobs score too closely, RenoAI returns **price unavailable** instead of guessing.
-
-### The homeowner remains in control
-
-The AI-generated brief is editable and requires explicit confirmation. The final assessment is based on that confirmed brief, not on hidden assumptions from the original conversation.
-
-### One brief, multiple audiences
-
-The homeowner result and contractor-ready view render the same `ProjectBrief`. No new diagnosis, scope, or pricing facts are invented when the view changes.
-
-### Designed for real mobile use
-
-The complete journey — Google sign-in, property setup, evidence capture, clarification, review, analysis, saved requests, and contractor handoff — is designed mobile-first.
-
-## Product flow
+1. A homeowner describes a repair and can add photos or an issue category.
+2. Qwen extracts a structured brief and identifies missing details. The homeowner answers clarification questions and can revise the brief before continuing.
+3. The server runs repair assessment and rule-based pricing in parallel. The pricing engine requires both an affected-item match and a symptom match. Close competing jobs return an unavailable estimate.
+4. The result is saved as a shared data object for the homeowner and contractor-format views. Both support browser print-to-PDF.
 
 ```text
-Property + text + photos + category hint
-                    │
-                    ▼
-       Qwen structured extraction
-                    │
-          Missing critical detail?
-             │ yes        │ no
-             ▼            │
-      One question at      │
-          a time           │
-             └──────┬──────┘
-                    ▼
-      Homeowner-confirmed ProblemBrief
-                    │
-          ┌─────────┴─────────┐
-          ▼                   ▼
-   Qwen Repair Agent   Deterministic Price Engine
-          │                   │
-          └─────────┬─────────┘
-                    ▼
-             ProjectBrief
-          ┌─────────┼─────────┐
-          ▼         ▼         ▼
-      User view  Requests  Contractor view / PDF
+Description + photos
+        ↓
+Structured brief → Clarification → Homeowner review
+                                      ↓
+                  Repair assessment + Catalog match or abstention
+                                      ↓
+                           Project brief and print views
 ```
 
-## Pricing knowledge base
+## Pricing data and evidence
 
-The pricing pipeline deliberately separates raw research from production data:
+- **51 bundled jobs** with indicative SGD ranges and **49 separate review entries** with rejection or follow-up reasons. The source files for raw research are empty in this checkout, so the ranges are not independently traceable here.
+- **Versioned inputs.** JSON supplies the bundled matcher and generates the Supabase seed migration. The local validator checks record shape, unique job codes, currency, and price ranges.
+- **Reproducible checks.** Local example cases exercise matching, abstention, and known limitations. The evaluation includes a negated symptom that the current matcher incorrectly prices.
 
-| Stage | Records |
-| --- | ---: |
-| Raw internal and external records | 348 |
-| Normalized repair jobs | 100 |
-| Production-ready jobs | 51 |
-| Held for human review | 49 |
+[Evaluation and limitations](docs/evaluation.md) · [Bundled jobs](data/pricing/price-knowledge-base.json) · [Review queue](data/pricing/price-needs-review.json)
 
-Production coverage currently includes doors, plumbing, electrical work, walls and ceilings, air-conditioning, and common household repairs. The reviewed dataset is stored in Supabase for production and bundled locally as a resilient fallback. A generator keeps the database migration reproducible from the versioned knowledge file.
+## Run checks locally
 
-## Architecture
+Use Node.js 24, as pinned in [.nvmrc](.nvmrc). These checks run without OAuth, Supabase, or Qwen credentials.
 
-RenoAI uses typed boundaries rather than a single free-form agent:
-
-```text
-ProblemAnalysis
-    └── ProblemBrief (user confirmed)
-            ├── RepairResult  ← Qwen
-            └── PriceResult   ← deterministic matcher
-                    │
-                    └── ProjectBrief
+```bash
+npm ci
+npm run lint
+npm test
+node scripts/validate-pricing.mjs
+npm run evaluate:pricing
+npm run build
 ```
 
-- **Structured output:** Zod validates every AI and API boundary.
-- **Parallel analysis:** repair reasoning and pricing run independently from the same confirmed input.
-- **Persistent records:** properties and repair requests sync through Supabase.
-- **Private evidence:** uploads use signed Supabase Storage URLs and owner-scoped paths.
-- **Authentication:** Auth.js handles Google OAuth; application secrets remain server-side.
-- **Resilient pricing:** Supabase is the production source, with a validated bundled fallback.
+To start the app, copy [.env.example](.env.example) to `.env.local`, set the appropriate values for your workflow, then run `npm run dev`. Use a generated local `AUTH_SECRET` and keep `.env.local` private.
 
-## Sponsor integrations
-
-### Daytona — isolated pricing-data validation
-
-RenoAI uses Daytona for its offline pricing-data quality gate. Before reviewed price data is accepted, `npm run daytona:validate-pricing` creates an isolated TypeScript sandbox, clones the configured repository branch, and runs the production pricing validator inside that sandbox.
-
-This keeps data validation outside the live homeowner request path: the sandbox validates required fields, unique job codes, SGD currency, and valid price ranges, but never produces a user-facing estimate or receives Qwen, Supabase, OAuth, or application secrets. See [the Daytona integration notes](infra/daytona/README.md).
-
-### Nosana — asynchronous video-evidence processing
-
-RenoAI uses Nosana as the asynchronous GPU worker lane for uploaded repair videos. The worker design extracts representative frames and produces evidence metadata before selected frames are passed to Qwen, keeping expensive video work out of the interactive repair flow.
-
-The current product supports signed, owner-scoped video storage in Supabase; the Nosana worker contract is documented in [the Nosana integration notes](infra/nosana/README.md). This separation keeps the mobile experience responsive while providing a path to richer visual diagnosis.
-
-## Tech stack
-
-| Layer | Technology |
+| Workflow | Requirements |
 | --- | --- |
-| Web application | Next.js 16, React 19, TypeScript |
-| AI | Qwen Vision-Language model through an OpenAI-compatible endpoint |
-| Validation | Zod |
-| Authentication | Auth.js with Google OAuth |
-| Database and storage | Supabase Postgres, Row Level Security, Supabase Storage |
-| Deployment | Vercel |
-| Daytona | Isolated sandbox for production pricing-data validation |
-| Nosana | Asynchronous GPU worker lane for video-evidence frame extraction and metadata |
-| Pricing validation | Versioned JSON data and reproducible SQL migration |
+| Review the product without an account | Use the [sample walkthrough](docs/walkthrough.md). |
+| Run the signed-in text workflow | Configure Auth.js and a Google OAuth client, including the callback for the local origin. Set `AI_DEMO_MODE=true` for deterministic text-based analysis. |
+| Run live photo-assisted analysis | Configure Qwen and set `AI_DEMO_MODE=false`. Live extraction sends photos and request context to the configured provider. |
+| Persist records and attach media | Configure Supabase and apply the [migrations](supabase/migrations). Without Supabase, use text-only input and browser-local records. |
 
-## Run locally
+## Implementation status
 
-Requirements: Node.js 20+ and a Google OAuth web client.
+- **Implemented** · Mobile workflow, structured analysis, editable brief, deterministic pricing, browser-local storage with optional Supabase sync, and a contractor-format print view.
+- **Prototype limits** · Confirmation is a UI step. Video can be stored when Supabase is configured, and model extraction uses photos. The pricing matcher is primarily English and its matching score is separate from the model's self-reported repair confidence. Estimates are indicative and an on-site inspection can change the scope.
+- **Optional tooling** · The [Daytona launcher](infra/daytona/README.md) needs the Daytona SDK and credentials. The [Nosana worker](infra/nosana/README.md) is a design for future video processing.
 
-```bash
-git clone https://github.com/DavidOng122/RenoAi.git
-cd RenoAi
-npm install
-cp .env.example .env.local
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000).
-
-Minimum local configuration:
-
-```dotenv
-AUTH_SECRET=replace_with_a_long_random_value
-AUTH_GOOGLE_ID=your_google_client_id
-AUTH_GOOGLE_SECRET=your_google_client_secret
-
-# Use the deterministic demo repair flow without a Qwen key.
-AI_DEMO_MODE=true
-```
-
-To enable the live Qwen pipeline:
-
-```dotenv
-QWEN_API_KEY=your_qwen_api_key
-QWEN_BASE_URL=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-QWEN_MODEL=qwen3-vl-flash
-AI_DEMO_MODE=false
-```
-
-To enable cloud records, evidence storage, and the production price source:
-
-```dotenv
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
-```
-
-Apply the migrations in `supabase/migrations` before using Supabase-backed features. Never commit `.env.local`, and never expose `QWEN_API_KEY`, `AUTH_SECRET`, or OAuth client secrets through `NEXT_PUBLIC_*` variables.
-
-Optional sponsor integration configuration:
-
-```dotenv
-DAYTONA_API_KEY=your_daytona_api_key
-NOSANA_API_KEY=your_nosana_api_key
-```
-
-Daytona runs only when its validation command is invoked. Nosana is intentionally asynchronous and remains outside the synchronous repair and pricing request path.
-
-## Useful commands
-
-```bash
-npm run dev                       # Start the local development server
-npm run build                     # Run the production build and type checks
-npm run generate:price-migration  # Rebuild the Supabase price migration
-node scripts/validate-pricing.mjs # Validate all production pricing rows
-npm run daytona:validate-pricing  # Validate pricing data in an isolated Daytona sandbox
-```
-
-## Repository map
-
-```text
-src/app                 Pages and API routes
-src/features            UI organized by product flow
-src/schemas             Shared Zod contracts
-src/server/ai           Qwen client, prompts, and structured generation
-src/server/pipeline     Confirmed-brief orchestration
-src/server/pricing      Deterministic matching and Supabase repository
-src/server/supabase.ts  Owner-scoped database and storage clients
-data/pricing            Raw, normalized, reviewed, and production price data
-supabase/migrations     Database, RLS, storage, and pricing migrations
-docs/architecture.md    Route map, ownership rules, and request lifecycle
-```
-
-## Current scope
-
-RenoAI is a decision-support MVP, not a contractor marketplace and not a substitute for an on-site professional inspection. Price ranges are indicative, safety-sensitive cases should be handled by qualified tradespeople, and low-confidence cases are surfaced rather than hidden.
+Built with Next.js, React, TypeScript, Zod, Qwen, Auth.js, and Supabase.

@@ -3,13 +3,16 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
-import { localStore, type RepairRequest } from "@/lib/local-store";
+import type { RepairRequest } from "@/lib/local-store";
+import { useLocalStore } from "@/lib/local-store-context";
 import { ProblemBriefCard } from "@/features/problem-brief/ProblemBriefCard";
 import { Download } from "lucide-react";
 
 export function ContractorProjectView() {
+  const localStore = useLocalStore();
   const { requestId } = useParams<{requestId:string}>(); const [item,setItem]=useState<RepairRequest>();
-  useEffect(()=>setItem(localStore.request(requestId)),[requestId]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- Browser storage is read after hydration.
+  useEffect(()=>setItem(localStore.request(requestId)),[localStore, requestId]);
   const project=item?.project;
   if(!project) return <AppShell navigation={false}><div className="empty">Project not found.</div></AppShell>;
   return <AppShell navigation={false}><div className="page-head"><div><div className="eyebrow">Contractor project brief</div><h1>{project.problem.location} · {project.problem.affected_item}</h1><p className="muted">Reference {project.request_id}</p></div><button className="secondary-btn no-print" onClick={()=>window.print()}><Download size={16}/> Save PDF</button></div>

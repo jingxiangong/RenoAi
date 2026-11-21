@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Check, ChevronDown, Home, Plus, Trash2, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { localStore } from "@/lib/local-store";
+import { useLocalStore } from "@/lib/local-store-context";
 import { cn } from "@/lib/utils";
 import type { Property } from "@/schemas/property.schema";
 
@@ -25,6 +25,7 @@ export function AccountAvatar({ user, className = "brief-avatar", href = "/setti
 }
 
 export function MobileHeader({ variant = "default", user }: { variant?: "default" | "analysis"; user?: MobileAccountUser }) {
+  const localStore = useLocalStore();
   const [property, setProperty] = useState<Property>();
   const [properties, setProperties] = useState<Property[]>([]);
   const [open, setOpen] = useState(false);
@@ -39,7 +40,7 @@ export function MobileHeader({ variant = "default", user }: { variant?: "default
     void localStore.syncFromCloud();
     window.addEventListener("renoai:change", sync);
     return () => window.removeEventListener("renoai:change", sync);
-  }, []);
+  }, [localStore]);
 
   useEffect(() => {
     if (!open) return;

@@ -2,15 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { localStore, type RepairRequest } from "@/lib/local-store";
+import type { RepairRequest } from "@/lib/local-store";
+import { useLocalStore } from "@/lib/local-store-context";
 import { ProblemBriefCard } from "./ProblemBriefCard";
 import type { ProblemBrief } from "@/schemas/problem-brief.schema";
 import { ArrowRight, Pencil } from "lucide-react";
 
 export function ReviewBrief() {
+  const localStore = useLocalStore();
   const { requestId } = useParams<{ requestId: string }>(); const router = useRouter();
   const [item, setItem] = useState<RepairRequest>(); const [editing, setEditing] = useState(false); const [brief, setBrief] = useState<ProblemBrief>(); const [expanded, setExpanded] = useState(false);
-  useEffect(() => { const r = localStore.request(requestId); setItem(r); setBrief(r?.analysis?.problem_brief); }, [requestId]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- Browser storage is read after hydration.
+  useEffect(() => { const r = localStore.request(requestId); setItem(r); setBrief(r?.analysis?.problem_brief); }, [localStore, requestId]);
   if (!item || !brief) return <main className="brief-shell analysis-review-page agent-flow-page"><div className="requests-empty">Request not found.</div></main>;
   const currentItem = item;
   const currentBrief = brief;
