@@ -3,13 +3,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronDown, LogOut } from "lucide-react";
-import { BottomNavigation } from "@/features/navigation/BottomNavigation";
 import { signOutAction } from "@/app/actions/auth";
-import { useLocalStore } from "@/lib/local-store-context";
+import { useLocalStore } from "@/features/account-data/context";
 import { useEffect, useState } from "react";
 import type { Property } from "@/schemas/property.schema";
 
-export function AppShell({ children, navigation = true }: { children: React.ReactNode; navigation?: boolean }) {
+export function AppShell({ children }: { children: React.ReactNode }) {
   const localStore = useLocalStore();
   const [property, setProperty] = useState<Property>();
   useEffect(() => {
@@ -29,7 +28,6 @@ export function AppShell({ children, navigation = true }: { children: React.Reac
         </div>
       </header>
       <main className="main">{children}</main>
-      {navigation && <BottomNavigation />}
     </div>
   );
 }

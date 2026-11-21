@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { auth } from "@/auth";
 import { MobileBottomNav, MobileHeader } from "@/components/MobileShell";
-import { RepairComposer } from "@/features/repair-input/RepairComposer";
+import { RepairComposer } from "@/features/repair/input/RepairComposer";
 
 export default async function HomePage() {
   const session = await auth();

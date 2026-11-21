@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { RepairRequest } from "@/lib/local-store";
-import { useLocalStore } from "@/lib/local-store-context";
+import type { RepairRequest } from "@/features/account-data/store";
+import { useLocalStore } from "@/features/account-data/context";
 
 function route(item: RepairRequest) {
   if (item.status === "ready") return `/repair/${item.id}/result`;
@@ -59,7 +59,13 @@ function RequestCard({ item, onDelete }: { item: RepairRequest; onDelete: (item:
 export function RequestList() {
   const localStore = useLocalStore();
   const [items, setItems] = useState<RepairRequest[]>([]);
-  useEffect(() => { const sync = () => setItems(localStore.requests()); sync(); void localStore.syncFromCloud(); window.addEventListener("renoai:change", sync); return () => window.removeEventListener("renoai:change", sync); }, [localStore]);
+  useEffect(() => {
+    const sync = () => setItems(localStore.requests());
+    sync();
+    void localStore.syncFromCloud();
+    window.addEventListener("renoai:change", sync);
+    return () => window.removeEventListener("renoai:change", sync);
+  }, [localStore]);
 
   function deleteRequest(item: RepairRequest) {
     const title = item.analysis?.problem_brief.affected_item || item.category_hint || "this request";

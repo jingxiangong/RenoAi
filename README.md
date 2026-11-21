@@ -23,7 +23,7 @@ Structured brief → Clarification → Homeowner review
 
 ## Pricing data and evidence
 
-- **51 bundled jobs** with indicative SGD ranges and **49 separate review entries** with rejection or follow-up reasons. The source files for raw research are empty in this checkout, so the ranges are not independently traceable here.
+- **51 bundled jobs** with indicative SGD ranges and **49 separate review entries** with rejection or follow-up reasons. The raw research sources are outside this repository, so the ranges are not independently traceable here.
 - **Versioned inputs.** JSON supplies the bundled matcher and generates the Supabase seed migration. The local validator checks record shape, unique job codes, currency, and price ranges.
 - **Reproducible checks.** Local example cases exercise matching, abstention, and known limitations. The evaluation includes a negated symptom that the current matcher incorrectly prices.
 
@@ -61,6 +61,5 @@ Live AI reserves each provider call in Supabase before sending it. Each repair a
 
 - **Implemented** · Mobile workflow, structured analysis, editable brief, deterministic pricing, browser-local storage with optional Supabase sync, and a contractor-format print view.
 - **Prototype limits** · Confirmation is a UI step. Video can be stored when Supabase is configured, and model extraction uses photos. The pricing matcher is primarily English and its matching score is separate from the model's self-reported repair confidence. Estimates are indicative and an on-site inspection can change the scope.
-- **Optional tooling** · The [Daytona launcher](infra/daytona/README.md) needs the Daytona SDK and credentials. The [Nosana worker](infra/nosana/README.md) is a design for future video processing.
 
 Built with Next.js, React, TypeScript, Zod, Qwen, Auth.js, and Supabase.

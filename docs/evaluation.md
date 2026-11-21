@@ -12,4 +12,4 @@ The false price is for “door is not sticking.” Token overlap can match the n
 
 ## Catalog provenance
 
-The repository versions 51 price rows and a review queue of 49 entries. The queue documents examples of inconsistent scope, missing upper bounds, and mixed labor-only and all-in prices. The raw-source files are empty here. Before claiming market coverage or benchmark quality, attach permission-cleared sources and document collection dates, unit of work, inclusion rules, and reviewer decisions.
+The repository versions 51 price rows and a review queue of 49 entries. The queue documents examples of inconsistent scope, missing upper bounds, and mixed labor-only and all-in prices. Raw research sources are outside this repository. Before claiming market coverage or benchmark quality, attach permission-cleared sources and document collection dates, unit of work, inclusion rules, and reviewer decisions.

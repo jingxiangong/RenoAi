@@ -1,15 +1,9 @@
-import { NextResponse } from "next/server";
-import { createProblemAnalysis } from "@/server/ai/qwen";
-import { ExtractionInputSchema, repairErrorResponse } from "@/server/ai/repair-api";
-import { auth } from "@/auth";
+import { ExtractionInputSchema } from "@/server/repair/inputs";
+import { repairPost } from "@/server/repair/route-handler";
+import { createProblemAnalysis } from "@/server/repair/workflow";
 
-export const POST = auth(async function POST(request) {
-  const email = request.auth?.user?.email;
-  if (!email) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  try {
-    const input = ExtractionInputSchema.parse(await request.json());
-    return NextResponse.json(await createProblemAnalysis(input, email, "extract"));
-  } catch (error) {
-    return repairErrorResponse(error, "Unable to create problem brief.");
-  }
-});
+export const POST = repairPost(
+  ExtractionInputSchema,
+  (input, email) => createProblemAnalysis(input, email, "extract"),
+  "Unable to create problem brief.",
+);

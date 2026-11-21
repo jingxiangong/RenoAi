@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { auth } from "@/auth";
-import { LocalStoreProvider } from "@/lib/local-store-context";
+import { LocalStoreProvider } from "@/features/account-data/context";
 import { cacheScopeForEmail } from "@/server/cache-scope";
 
 export const metadata: Metadata = {

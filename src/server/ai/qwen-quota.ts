@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cacheScopeForEmail } from "@/server/cache-scope";
+import { RepairApiError } from "@/server/http/repair-error";
 import { createRenoQuotaSupabase } from "@/server/supabase";
 
 export type QwenCall = {
@@ -8,12 +9,6 @@ export type QwenCall = {
   requestId: string;
   stage: "extract" | "clarify" | "repair";
 };
-
-export class RepairApiError extends Error {
-  constructor(readonly status: 400 | 429 | 502 | 503 | 504, message: string) {
-    super(message);
-  }
-}
 
 const quotaMessages: Record<string, string> = {
   clarification_limit: "This repair has already used its AI follow-up. Review the current brief to continue.",

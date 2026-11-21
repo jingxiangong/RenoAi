@@ -1,15 +1,5 @@
-import { NextResponse } from "next/server";
-import { analyseProject } from "@/server/pipeline/analyse-project";
-import { FinalAnalysisInputSchema, repairErrorResponse } from "@/server/ai/repair-api";
-import { auth } from "@/auth";
+import { FinalAnalysisInputSchema } from "@/server/repair/inputs";
+import { repairPost } from "@/server/repair/route-handler";
+import { analyseProject } from "@/server/repair/workflow";
 
-export const POST = auth(async function POST(request) {
-  const email = request.auth?.user?.email;
-  if (!email) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  try {
-    const { problem, evidence } = FinalAnalysisInputSchema.parse(await request.json());
-    return NextResponse.json(await analyseProject(problem, evidence, email));
-  } catch (error) {
-    return repairErrorResponse(error, "Unable to analyse project.");
-  }
-});
+export const POST = repairPost(FinalAnalysisInputSchema, analyseProject, "Unable to analyse project.");

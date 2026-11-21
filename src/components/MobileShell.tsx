@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Check, ChevronDown, Home, Plus, Trash2, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useLocalStore } from "@/lib/local-store-context";
+import { useLocalStore } from "@/features/account-data/context";
 import { cn } from "@/lib/utils";
 import type { Property } from "@/schemas/property.schema";
 
@@ -24,7 +23,7 @@ export function AccountAvatar({ user, className = "brief-avatar", href = "/setti
     : <span className={className}>{content}</span>;
 }
 
-export function MobileHeader({ variant = "default", user }: { variant?: "default" | "analysis"; user?: MobileAccountUser }) {
+export function MobileHeader({ user }: { user?: MobileAccountUser }) {
   const localStore = useLocalStore();
   const [property, setProperty] = useState<Property>();
   const [properties, setProperties] = useState<Property[]>([]);
@@ -58,8 +57,6 @@ export function MobileHeader({ variant = "default", user }: { variant?: "default
     };
   }, [open]);
 
-  const options = properties;
-
   function chooseProperty(item: Property) {
     localStore.selectProperty(item.id);
     setOpen(false);
@@ -71,7 +68,7 @@ export function MobileHeader({ variant = "default", user }: { variant?: "default
   }
 
   return (
-    <header className={cn("brief-topbar", variant === "analysis" && "analysis-topbar")}>
+    <header className="brief-topbar">
       <div className="brief-property-control" ref={controlRef}>
         <button
           className="brief-property-pill"
@@ -80,22 +77,16 @@ export function MobileHeader({ variant = "default", user }: { variant?: "default
           aria-controls="property-menu"
           onClick={() => setOpen((value) => !value)}
         >
-          {variant === "analysis"
-            ? <Image src="/analysis/property-home.svg" alt="" width={17} height={16} />
-            : <Home aria-hidden size={16} strokeWidth={1.8} />}
-          <span>{property
-            ? `${property.home_type} · ${variant === "analysis" ? property.address.address_line || property.name : property.name}`
-            : "My Home"}</span>
-          {variant === "analysis"
-            ? <Image className={cn("brief-property-chevron", open && "open")} src="/analysis/property-chevron.svg" alt="" width={8} height={5} />
-            : <ChevronDown className={cn("brief-property-chevron", open && "open")} aria-hidden size={10} strokeWidth={1.8} />}
+          <Home aria-hidden size={16} strokeWidth={1.8} />
+          <span>{property ? `${property.home_type} · ${property.name}` : "My Home"}</span>
+          <ChevronDown className={cn("brief-property-chevron", open && "open")} aria-hidden size={10} strokeWidth={1.8} />
         </button>
 
         {open && (
           <div className="brief-property-menu" id="property-menu" role="menu">
             <p className="brief-property-menu-label">Your properties</p>
             <div className="brief-property-options">
-              {options.map((item) => {
+              {properties.map((item) => {
                 const selected = item.id === property?.id;
                 return (
                   <div className={cn("brief-property-option-row", selected && "selected")} key={item.id}>

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useLocalStore } from "@/lib/local-store-context";
+import { useLocalStore } from "@/features/account-data/context";
 import { newId } from "@/lib/utils";
 import type { Property } from "@/schemas/property.schema";
 

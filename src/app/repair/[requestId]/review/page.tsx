@@ -1,2 +1,6 @@
-import { ReviewBrief } from "@/features/problem-brief/ReviewBrief";
-export default function ReviewPage() { return <ReviewBrief />; }
+import { ReviewBrief } from "@/features/repair/brief/ReviewBrief";
+
+export default async function ReviewPage({ params }: PageProps<"/repair/[requestId]/review">) {
+  const { requestId } = await params;
+  return <ReviewBrief key={requestId} requestId={requestId} />;
+}
